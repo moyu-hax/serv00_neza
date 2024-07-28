@@ -87,6 +87,8 @@ run_nezha() {
     sleep 3
     if pgrep -f "dashboard" > /dev/null; then
         echo "nezha-dashboard 已启动，请使用浏览器访问 http://${IP_ADDRESS}:${nz_site_port} 进行进一步配置。"
+        echo "停止 dashboard 进程的命令：pgrep -f 'dashboard' | xargs -r kill"
+        echo "删除已安装的 dashboard 的命令：rm -rf ~/.nezha-dashboard"
     else
         rm -rf "${WORKDIR}"
         echo "nezha-dashboard 启动失败，请检查端口开放情况，并保证参数填写正确，再重新安装！"
