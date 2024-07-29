@@ -16,7 +16,7 @@ nohup ~/.nezha-agent/start.sh >/dev/null 2>&1 &
 mkdir direct-xray && cd direct-xray && git clone -b direct https://github.com/k0baya/x-for-serv00 ~/direct-xray
 ```
 ```
-chmod +x ~/direct-xray/start.sh && bash ~/direct-xray/start.sh >/dev/null 2>&1
+chmod +x ~/direct-xray/start.sh && bash ~/direct-xray/start.sh 
 ```
 ```
 bash ~/direct-xray/start.sh >/dev/null 2>&1
