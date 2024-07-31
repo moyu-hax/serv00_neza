@@ -1,4 +1,6 @@
 ## 关于serv00的一些快捷方法，本人自用的。
+
+
 ## 面板
 ```
 bash <(curl -s https://raw.githubusercontent.com/moyu-hax/serv00_neza/main/install-dashboard.sh)
@@ -10,6 +12,9 @@ bash <(curl -s https://raw.githubusercontent.com/moyu-hax/serv00_neza/main/insta
 ## 重启指令
 ```
 nohup ~/.nezha-agent/start.sh >/dev/null 2>&1 &
+```
+```
+nohup ~/.nezha-dashboard/start.sh >/dev/null 2>&1 &
 ```
 ## 一键节点直连
 ```
