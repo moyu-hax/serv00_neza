@@ -1,10 +1,10 @@
 #!/bin/bash
-
+export VERSION=${VERSION:-'17.5'}
 USERNAME=$(whoami)
 WORKDIR="/home/${USERNAME}/.nezha-agent"
 
 download_agent() {
-    DOWNLOAD_LINK="https://github.com/nezhahq/agent/releases/latest/download/nezha-agent_freebsd_amd64.zip"
+    DOWNLOAD_LINK="https://github.com/nezhahq/agent/releases/download/v0.${VERSION}/nezha-agent_freebsd_amd64.zip"
     if ! wget -qO "$ZIP_FILE" "$DOWNLOAD_LINK"; then
         echo 'error: Download failed! Please check your network or try again.'
         return 1
