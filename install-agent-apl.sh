@@ -13,7 +13,7 @@ NZ_AGENT_PATH="${NZ_BASE_PATH}/agent"
 NZ_DASHBOARD_SERVICE="/etc/systemd/system/nezha-dashboard.service"
 NZ_DASHBOARD_SERVICERC="/etc/init.d/nezha-dashboard"
 NZ_VERSION="v0.18.3"
-export version=${VERSION:-'v0.17.5'}
+version=${VERSION:-'v0.17.5'}
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -355,17 +355,6 @@ install_agent() {
     echo "> 安装监控Agent"
 
     echo "正在获取监控Agent版本号"
-
-    local version=$(curl -m 10 -sL "https://api.github.com/repos/nezhahq/agent/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-    if [ ! -n "$version" ]; then
-        version=$(curl -m 10 -sL "https://gitee.com/api/v5/repos/naibahq/agent/releases/latest" | awk -F '"' '{for(i=1;i<=NF;i++){if($i=="tag_name"){print $(i+2)}}}')
-    fi
-    if [ ! -n "$version" ]; then
-        version=$(curl -m 10 -sL "https://fastly.jsdelivr.net/gh/nezhahq/agent/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/nezhahq\/agent@/v/g')
-    fi
-    if [ ! -n "$version" ]; then
-        version=$(curl -m 10 -sL "https://gcore.jsdelivr.net/gh/nezhahq/agent/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/nezhahq\/agent@/v/g')
-    fi
 
     if [ ! -n "$version" ]; then
         err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/nezhahq/agent/releases/latest"
