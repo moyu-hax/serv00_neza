@@ -13,7 +13,7 @@ NZ_AGENT_PATH="${NZ_BASE_PATH}/agent"
 NZ_DASHBOARD_SERVICE="/etc/systemd/system/nezha-dashboard.service"
 NZ_DASHBOARD_SERVICERC="/etc/init.d/nezha-dashboard"
 NZ_VERSION="v0.18.3"
-version=${VERSION:-'v0.17.5'}
+export version=${VERSION:-'v0.17.5'}
 
 red='\033[0;31m'
 green='\033[0;32m'
