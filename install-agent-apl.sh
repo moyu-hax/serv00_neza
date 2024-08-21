@@ -13,6 +13,12 @@ download_agent() {
 }
 
 decompression() {
+    echo "正在解压缩文件: \$1"
+    if [ ! -f "\$1" ]; then
+        echo "错误: 文件 \$1 不存在!"
+        exit 1
+    fi
+
     unzip "\$1" -d "$TMP_DIRECTORY"
     EXIT_CODE=$?
     if [ ${EXIT_CODE} -ne 0 ]; then
@@ -26,7 +32,7 @@ install_agent() {
     mv "${TMP_DIRECTORY}/nezha-agent" "${WORKDIR}/nezha-agent" && chmod 755 "${WORKDIR}/nezha-agent"
 }
 
-generate_run_agent(){
+generate_run_agent() {
     echo "关于接下来需要输入的三个变量，请注意："
     echo "Dashboard 站点地址可以写 IP 也可以写域名（域名不可套 CDN）;但是请不要加上 http:// 或者 https:// 等前缀，直接写 IP 或域名即可；"
     echo "面板 RPC 端口为你的 Dashboard 安装时设置的用于 Agent 接入的 RPC 端口（默认 5555）；"
@@ -47,17 +53,17 @@ generate_run_agent(){
         exit 1
     fi
 
-    cat > ${WORKDIR}/start.sh << EOF
+    cat > "${WORKDIR}/start.sh" <<EOF
 #!/bin/sh
 pgrep -f 'nezha-agent' | xargs -r kill
 cd ${WORKDIR}
 TMPDIR="${WORKDIR}" exec ${WORKDIR}/nezha-agent -s ${NZ_DASHBOARD_SERVER}:${NZ_DASHBOARD_PORT} -p ${NZ_DASHBOARD_PASSWORD} --report-delay 4 --disable-auto-update --disable-force-update ${ARGS} >/dev/null 2>&1
 EOF
-    chmod +x ${WORKDIR}/start.sh
+    chmod +x "${WORKDIR}/start.sh"
 }
 
-run_agent(){
-    nohup ${WORKDIR}/start.sh >/dev/null 2>&1 &
+run_agent() {
+    nohup "${WORKDIR}/start.sh" >/dev/null 2>&1 &
     printf "nezha-agent已经准备就绪，请按下回车键启动
 "
     read
@@ -82,9 +88,8 @@ cd "${WORKDIR}" || exit
 TMP_DIRECTORY="$(mktemp -d)"
 ZIP_FILE="${TMP_DIRECTORY}/nezha-agent_linux_amd64.zip"
 
-[ ! -e ${WORKDIR}/start.sh ] && generate_run_agent
-[ ! -e ${WORKDIR}/nezha-agent ] && download_agent \
-&& decompression "${ZIP_FILE}" \
-&& install_agent
+# Check if start.sh or nezha-agent already exists
+[ ! -e "${WORKDIR}/start.sh" ] && generate_run_agent
+[ ! -e "${WORKDIR}/nezha-agent" ] && download_agent && decompression "${ZIP_FILE}" && install_agent
 rm -rf "${TMP_DIRECTORY}"
-[ -e ${WORKDIR}/start.sh ] && run_agent
+[ -e "${WORKDIR}/start.sh" ] && run_agent
