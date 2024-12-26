@@ -131,39 +131,35 @@ echo -e "${green}开始尝试降级Agent"
 
 restart_agent(){
 echo -e "${green}开始尝试重启agent服务${plain}"
-if [[ "${release}" == "centos" ]]; then
-sudo systemctl daemon-reload
-systemctl restart nezha-agent
+
+# 检查 systemctl 是否存在，并获取其路径
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl_path=$(command -v systemctl)
+    echo -e "${green}检测到 systemctl 命令,路径为: ${systemctl_path}${plain}"
+    # 使用 systemctl 管理服务
+    if [[ "${release}" == "centos" ]] || [[ "${release}" == "debian" ]] || [[ "${release}" == "ubuntu" ]]; then
+        sudo "${systemctl_path}" daemon-reload
+        sudo "${systemctl_path}" restart nezha-agent
+        if [ $? -eq 0 ]; then
+            echo -e "${green}nezha-agent服务已成功重启\n${plain}"
+        else
+            echo -e "${red}nezha-agent服务重启失败\n${plain}"
+        fi
+    else
+        echo -e "${yellow}当前系统 ${release} 不支持 systemctl 管理服务,请尝试手动重启 nezha-agent 服务${plain}"
+    fi
 elif [[ "${release}" == "alpine" ]]; then
+    # Alpine 使用 rc-service
     chmod +x /etc/init.d/nezha-agent
     rc-update add nezha-agent default
     rc-service nezha-agent restart
-else
-    sudo systemctl daemon-reload
-    systemctl restart nezha-agent
-fi
-
-if [ $? -eq 0 ]; then
-    echo -e "${green}nezha-agent服务已成功重启 (systemctl)\n${plain}"
-else
-    echo -e "${red}nezha-agent服务重启失败 (systemctl)\n${plain}"
-    # 尝试使用 service 命令重启
-    if command -v service &> /dev/null; then
-        sudo service nezha-agent restart
-        if [ $? -eq 0 ]; then
-            echo -e "${green}nezha-agent服务已成功重启 (service)\n${plain}"
-        else
-            echo -e "${red}nezha-agent服务重启失败 (service)\n${plain}"
-        fi
-    elif command -v initctl &> /dev/null; then
-        # 尝试使用 initctl 命令重启
-        sudo initctl restart nezha-agent
-        if [ $? -eq 0 ]; then
-            echo -e "${green}nezha-agent服务已成功重启 (initctl)\n${plain}"
-        else
-            echo -e "${red}nezha-agent服务重启失败 (initctl)\n${plain}"
-        fi
+    if [ $? -eq 0 ]; then
+        echo -e "${green}nezha-agent服务已成功重启\n${plain}"
+    else
+        echo -e "${red}nezha-agent服务重启失败\n${plain}"
     fi
+else
+    echo -e "${yellow}未检测到 systemctl 命令,且系统不是 Alpine,请尝试手动重启 nezha-agent 服务${plain}"
 fi
 }
 
