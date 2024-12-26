@@ -159,17 +159,7 @@ elif [[ "${release}" == "alpine" ]]; then
         echo -e "${red}nezha-agent服务重启失败\n${plain}"
     fi
 else
-    # 尝试使用 service 和 initctl 命令重启服务
-    echo -e "${yellow}未检测到 systemctl 命令,且系统不是 Alpine,尝试使用 service 和 initctl 命令重启服务${plain}"
-    if sudo service nezha-agent restart >/dev/null 2>&1; then
-        echo -e "${green}nezha-agent 服务已成功使用 service 命令重启\n${plain}"
-        return 0 # 成功重启，退出函数
-    elif sudo initctl restart nezha-agent >/dev/null 2>&1; then
-        echo -e "${green}nezha-agent 服务已成功使用 initctl 命令重启\n${plain}"
-        return 0 # 成功重启，退出函数
-    else
-        echo -e "${red}nezha-agent 服务使用 service 和 initctl 命令重启失败,请尝试手动重启 nezha-agent 服务\n${plain}"
-    fi
+    echo -e "${yellow}未检测到 systemctl 命令,且系统不是 Alpine,请尝试手动重启 nezha-agent 服务${plain}"
 fi
 }
 
