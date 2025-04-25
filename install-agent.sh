@@ -1,107 +1,136 @@
-#!/bin/bash
-export VERSION=${VERSION:-'17.5'}
-USERNAME=$(whoami)
-WORKDIR="/home/${USERNAME}/.nezha-agent"
+#!/bin/sh
+# 安装 Nezha Agent 的简化脚本
 
-# 定义颜色变量
-green='\033[0;32m'
-yellow='\033[0;33m'
-plain='\033[0m'
+set -e # 脚本出错时立即退出
 
-# 检测系统架构
-arch=$(uname -m)
-if [[ $arch == "x86_64" ]]; then
-    arch="amd64"
-elif [[ $arch == "aarch64" ]]; then
-    arch="arm64"
-fi
+# 默认参数，如果命令行没有提供，则使用这些值
+NZ_AGENT_VERSION=${1:-"v0.20.5"}       # Agent 版本，默认为 v0.20.5
+NZ_GRPC_HOST=${2:-"nz.luck.nyc.mn"}    # 面板域名，默认为 nz.luck.nyc.mn
+NZ_GRPC_PORT=${3:-"443"}               # 面板 RPC 端口，默认为 443
+NZ_CLIENT_SECRET=${4:-"xGprpNknTducLdzZrh"} # Agent 密钥，默认为 xGprpNknTducLdzZrh
+NZ_TLS=${5:-""}                      # 是否启用 TLS，默认为空
 
+# 定义一些颜色
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+PLAIN='\033[0m'
+
+# 定义 Agent 安装路径
+NZ_BASE_PATH="/opt/nezha"
+NZ_AGENT_PATH="${NZ_BASE_PATH}/agent"
+
+# 检查是否需要 sudo
+need_sudo() {
+    if [[ $(id -u) -ne 0 ]]; then
+        echo "sudo"
+    fi
+}
+
+# 打印信息
+info() {
+    printf "${YELLOW}%s${PLAIN}\n" "$*"
+}
+
+success() {
+    printf "${GREEN}%s${PLAIN}\n" "$*"
+}
+
+error() {
+    printf "${RED}%s${PLAIN}\n" "$*" >&2
+    exit 1
+}
+
+# 安装依赖
+install_dependencies() {
+    info "安装依赖..."
+    DEPS="curl wget unzip"
+    if command -v apt-get >/dev/null 2>&1; then
+        ${need_sudo} apt-get update
+        ${need_sudo} apt-get install -y $DEPS
+    elif command -v yum >/dev/null 2>&1; then
+        ${need_sudo} yum install -y $DEPS
+    elif command -v pacman >/dev/null 2>&1; then
+        ${need_sudo} pacman -Sy --noconfirm $DEPS
+    elif command -v apk >/dev/null 2>&1; then
+        ${need_sudo} apk update
+        ${need_sudo} apk add $DEPS
+    else
+        error "无法找到包管理器，请手动安装 curl, wget, 和 unzip。"
+    fi
+}
+
+# 获取系统架构
+get_arch() {
+    ARCH=$(uname -m)
+    case $ARCH in
+        x86_64) echo "amd64" ;;
+        i386 | i686) echo "386" ;;
+        aarch64 | armv8b | armv8l) echo "arm64" ;;
+        arm*) echo "arm" ;;
+        s390x) echo "s390x" ;;
+        riscv64) echo "riscv64" ;;
+        *) error "不支持的架构: $ARCH" ;;
+    esac
+}
+
+# 下载 Agent
 download_agent() {
-    if [[ "${arch}" == "amd64" ]]; then
-        DOWNLOAD_LINK="https://github.com/nezhahq/agent/releases/download/v0.${VERSION}/nezha-agent_linux_amd64.zip"
-    elif [[ "${arch}" == "arm64" ]]; then
-        DOWNLOAD_LINK="https://github.com/nezhahq/agent/releases/download/v0.${VERSION}/nezha-agent_linux_arm64.zip"
-    else
-        echo -e "${yellow}不支持的系统架构: ${arch}${plain}"
-        return 1
-    fi
+    ARCH=$(get_arch)
+    AGENT_URL="https://github.com/nezhahq/agent/releases/download/${NZ_AGENT_VERSION}/nezha-agent_linux_${ARCH}.zip"
+    AGENT_ZIP="nezha-agent_linux_${ARCH}.zip"
 
-    if ! wget -qO "$ZIP_FILE" "$DOWNLOAD_LINK"; then
-        echo -e "${yellow}error: 下载失败! 请检查网络或重试。${plain}"
-        return 1
-    fi
-    return 0
+    info "下载 Agent..."
+    ${need_sudo} wget -q "$AGENT_URL" -O "$AGENT_ZIP" || error "下载失败，请检查网络或版本号。"
+
+    return "$AGENT_URL"
+    return "$AGENT_ZIP"
+
 }
 
-decompression() {
-    unzip "$1" -d "$TMP_DIRECTORY"
-    EXIT_CODE=$?
-    if [ ${EXIT_CODE} -ne 0 ]; then
-        rm -r "$TMP_DIRECTORY"
-        echo "removed: $TMP_DIRECTORY"
-        exit 1
-    fi
-}
-
+# 安装 Agent
 install_agent() {
-    install -m 755 ${TMP_DIRECTORY}/nezha-agent ${WORKDIR}/nezha-agent
+    AGENT_URL=$(download_agent)
+    AGENT_ZIP=$(basename "$AGENT_URL")
+
+    info "安装 Agent..."
+    ${need_sudo} mkdir -p "$NZ_AGENT_PATH"
+    ${need_sudo} unzip -q "$AGENT_ZIP" -d "$NZ_AGENT_PATH" || error "解压失败。"
+    ${need_sudo} rm -f "$AGENT_ZIP"
+    ${need_sudo} mv "$NZ_AGENT_PATH"/nezha-agent "$NZ_AGENT_PATH/nezha-agent" # 确保可执行
+    ${need_sudo} chmod +x "$NZ_AGENT_PATH/nezha-agent"
 }
 
-generate_run_agent(){
-    echo "关于接下来需要输入的三个变量，请注意："
-    echo "Dashboard 站点地址可以写 IP 也可以写域名（域名不可套 CDN）;但是请不要加上 http:// 或者 https:// 等前缀，直接写 IP 或域名即可；"
-    echo "面板 RPC 端口为你的 Dashboard 安装时设置的用于 Agent 接入的 RPC 端口（默认 5555）；"
-    echo "Agent 密钥需要先在管理面板上添加 Agent 获取。"
-    printf "请输入 Dashboard 站点地址："
-    read -r NZ_DASHBOARD_SERVER
-    printf "请输入面板 RPC 端口："
-    read -r NZ_DASHBOARD_PORT
-    printf "请输入 Agent 密钥: "
-    read -r NZ_DASHBOARD_PASSWORD
-    printf "是否启用针对 gRPC 端口的 SSL/TLS加密 (--tls)，需要请按 [Y]，默认是不需要，不理解的用户可回车跳过: "
-    read -r NZ_GRPC_PROXY
-    echo "${NZ_GRPC_PROXY}" | grep -qiw 'Y' && ARGS='--tls'
-
-    if [ -z "${NZ_DASHBOARD_SERVER}" ] || [ -z "${NZ_DASHBOARD_PASSWORD}" ]; then
-        echo "error! 所有选项都不能为空"
-        rm -rf ${WORKDIR}
-        exit 1
+# 配置 Agent
+configure_agent() {
+    info "配置 Agent..."
+    if [ -n "$NZ_TLS" ]; then
+      TLS_ARG="--tls"
     fi
 
-    cat > ${WORKDIR}/start.sh << EOF
-#!/bin/bash
-pgrep -f 'nezha-agent' | xargs -r kill
-cd ${WORKDIR}
-TMPDIR="${WORKDIR}" exec ${WORKDIR}/nezha-agent -s ${NZ_DASHBOARD_SERVER}:${NZ_DASHBOARD_PORT} -p ${NZ_DASHBOARD_PASSWORD} --report-delay 4 --disable-auto-update --disable-force-update ${ARGS} >/dev/null 2>&1
-EOF
-    chmod +x ${WORKDIR}/start.sh
+    ${need_sudo} "$NZ_AGENT_PATH/nezha-agent" service install \
+        -s "$NZ_GRPC_HOST:$NZ_GRPC_PORT" \
+        -p "$NZ_CLIENT_SECRET" \
+        ${TLS_ARG} || error "Agent 配置失败。"
 }
 
-run_agent(){
-    nohup ${WORKDIR}/start.sh >/dev/null 2>&1 &
-    printf "nezha-agent已经准备就绪，请按下回车键启动\n"
-    read
-    printf "正在启动nezha-agent，请耐心等待...\n"
-    sleep 3
-    if pgrep -f "nezha-agent -s" > /dev/null; then
-        echo "nezha-agent 已启动！"
-        echo "如果面板处未上线，请检查参数是否填写正确，并停止 agent 进程，删除已安装的 agent 后重新安装！"
-        echo "停止 agent 进程的命令：pgrep -f 'nezha-agent' | xargs -r kill"
-        echo "删除已安装的 agent 的命令：rm -rf ~/.nezha-agent"
+# 主流程
+main() {
+    # 检查参数是否为空，设置默认值
+    if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
+       info "使用默认参数安装，或参数不足"
     else
-        rm -rf "${WORKDIR}"
-        echo "nezha-agent 启动失败，请检查参数填写是否正确，并重新安装！"
+       info "开始安装，IP: $NZ_GRPC_HOST， RPC端口: $NZ_GRPC_PORT， 密钥: $NZ_CLIENT_SECRET ，版本: $NZ_AGENT_VERSION ，加密: $NZ_TLS"
     fi
+
+    install_dependencies
+    install_agent
+    configure_agent
+
+    success "Nezha Agent 安装完成！"
 }
 
-mkdir -p ${WORKDIR}
-cd ${WORKDIR}
-TMP_DIRECTORY="$(mktemp -d)"
-ZIP_FILE="${TMP_DIRECTORY}/nezha-agent_linux_${arch}.zip"
+# 运行主流程
+main "$@"
 
-[ ! -e ${WORKDIR}/start.sh ] && generate_run_agent
-[ ! -e ${WORKDIR}/nezha-agent ] && download_agent \
-&& decompression "${ZIP_FILE}" \
-&& install_agent
-rm -rf "${TMP_DIRECTORY}"
-[ -e ${WORKDIR}/start.sh ] && run_agent
+exit 0
