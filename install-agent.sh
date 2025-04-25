@@ -3,10 +3,31 @@ export VERSION=${VERSION:-'17.5'}
 USERNAME=$(whoami)
 WORKDIR="/home/${USERNAME}/.nezha-agent"
 
+# 定义颜色变量
+green='\033[0;32m'
+yellow='\033[0;33m'
+plain='\033[0m'
+
+# 检测系统架构
+arch=$(uname -m)
+if [[ $arch == "x86_64" ]]; then
+    arch="amd64"
+elif [[ $arch == "aarch64" ]]; then
+    arch="arm64"
+fi
+
 download_agent() {
-    DOWNLOAD_LINK="https://github.com/nezhahq/agent/releases/download/v0.${VERSION}/nezha-agent_freebsd_amd64.zip"
+    if [[ "${arch}" == "amd64" ]]; then
+        DOWNLOAD_LINK="https://github.com/nezhahq/agent/releases/download/v0.${VERSION}/nezha-agent_linux_amd64.zip"
+    elif [[ "${arch}" == "arm64" ]]; then
+        DOWNLOAD_LINK="https://github.com/nezhahq/agent/releases/download/v0.${VERSION}/nezha-agent_linux_arm64.zip"
+    else
+        echo -e "${yellow}不支持的系统架构: ${arch}${plain}"
+        return 1
+    fi
+
     if ! wget -qO "$ZIP_FILE" "$DOWNLOAD_LINK"; then
-        echo 'error: Download failed! Please check your network or try again.'
+        echo -e "${yellow}error: 下载失败! 请检查网络或重试。${plain}"
         return 1
     fi
     return 0
@@ -76,7 +97,7 @@ run_agent(){
 mkdir -p ${WORKDIR}
 cd ${WORKDIR}
 TMP_DIRECTORY="$(mktemp -d)"
-ZIP_FILE="${TMP_DIRECTORY}/nezha-agent_freebsd_amd64.zip"
+ZIP_FILE="${TMP_DIRECTORY}/nezha-agent_linux_${arch}.zip"
 
 [ ! -e ${WORKDIR}/start.sh ] && generate_run_agent
 [ ! -e ${WORKDIR}/nezha-agent ] && download_agent \
