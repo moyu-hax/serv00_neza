@@ -1,11 +1,11 @@
 #!/bin/bash  
-export UUID=${UUID:-'bc97f674-c578-4940-9234-0a1da46041b9'} # 哪吒v1，在不同的平台需要改UUID，否则会覆盖
-export NEZHA_SERVER=${NEZHA_SERVER:-''}       # v1哪吒填写形式：nezha.abc.com:8008,v0哪吒填写形式：nezha.abc.com
-export NEZHA_PORT=${NEZHA_PORT:-''}           # v1哪吒不要填写这个,v0哪吒agent端口为{443,8443,2053,2083,2087,2096}其中之一时自动开启tls
-export NEZHA_KEY=${NEZHA_KEY:-''}             # v1的NZ_CLIENT_SECRET或v0的agent密钥
-export ARGO_DOMAIN=${ARGO_DOMAIN:-''}         # 固定隧道域名,留空即启用临时隧道
-export ARGO_AUTH=${ARGO_AUTH:-''}             # 固定隧道token或json,留空即启用临时隧道
-export CFIP=${CFIP:-'www.visa.com.tw'}        # argo节点优选域名或优选ip
+export UUID=${UUID:-'333cdcf3-4520-4b74-839b-fd4ccd472b14'} # 哪吒v1，在不同的平台需要改UUID，否则会覆盖
+export NEZHA_SERVER=${NEZHA_SERVER:-'nz.luck.nyc.mn'}       # v1哪吒填写形式：nezha.abc.com:8008,v0哪吒填写形式：nezha.abc.com
+export NEZHA_PORT=${NEZHA_PORT:-'443'}           # v1哪吒不要填写这个,v0哪吒agent端口为{443,8443,2053,2083,2087,2096}其中之一时自动开启tls
+export NEZHA_KEY=${NEZHA_KEY:-'UwjaSb5jzsjXkRaVjw'}             # v1的NZ_CLIENT_SECRET或v0的agent密钥
+export ARGO_DOMAIN=${ARGO_DOMAIN:-'kvmi7.xcx.pp.ua'}         # 固定隧道域名,留空即启用临时隧道
+export ARGO_AUTH=${ARGO_AUTH:-'{"AccountTag":"2288aa590e1341e5682c3b3e58731b84","TunnelSecret":"XczzA0u8PDFYXyXA/6g4j2OZQIz1jBbUt4RmSH63tPU=","TunnelID":"3628e4bc-56c3-4741-8b6a-1e7275d1f79d","Endpoint":""}'}             # 固定隧道token或json,留空即启用临时隧道
+export CFIP=${CFIP:-'cloudflare.182682.xyz'}        # argo节点优选域名或优选ip
 export CFPORT=${CFPORT:-'443'}                # argo节点端口 
 export NAME=${NAME:-'Vls'}                    # 节点名称  
 export FILE_PATH=${FILE_PATH:-'./.cache'}     # sub 路径  
