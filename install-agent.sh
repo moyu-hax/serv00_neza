@@ -1,5 +1,5 @@
-#!/bin/sh
-# 安装监控 Agent 的简化脚本 (自动添加 v0 前缀, 使用 curl -Ls)
+#!/bin/bash
+# 安装监控 Agent 的简化脚本 (自动添加 v0 前缀, 使用 curl -Ls, 兼容 dash)
 
 set -e # 脚本出错时立即退出
 
@@ -13,7 +13,7 @@ TLS=${5:-""}                      # 是否启用 TLS，默认为空
 # 添加 "v0." 前缀到版本号
 add_version_prefix() {
   version=$1
-  if [[ ! "$version" =~ ^v ]]; then
+  if ! echo "$version" | grep -q "^v"; then
     version="v0.${version}"
   fi
   echo "$version"
@@ -91,8 +91,9 @@ download_agent() {
   AGENT_ZIP="agent_linux_${ARCH}.zip" # 去掉 nezhahq 前缀
 
   info "下载 Agent..."
-  ${need_sudo} curl -Ls "$AGENT_URL" -O "$AGENT_ZIP" || error "下载失败，请检查网络或版本号。"
+  ${need_sudo} curl -Ls "$AGENT_URL" -o "$AGENT_ZIP" || error "下载失败，请检查网络或版本号。"
 
+  echo "url is ${AGENT_URL}"
   return "$AGENT_URL"
   return "$AGENT_ZIP"
 }
@@ -138,6 +139,15 @@ main() {
 
   success "Agent 安装完成！"
 }
+
+# 告诉系统使用 bash
+if [ -n "$BASH_VERSION" ]; then
+  # 如果已经运行在 Bash 中，则不执行任何操作
+  :
+else
+  # 否则，使用 exec 重新启动脚本，确保使用 Bash
+  exec /bin/bash "$0" "$@"
+fi
 
 # 运行主流程
 main "$@"
