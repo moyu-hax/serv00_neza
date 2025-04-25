@@ -1,14 +1,14 @@
 #!/bin/sh
-# 安装 Nezha Agent 的简化脚本 (自动添加 v0 前缀)
+# 安装监控 Agent 的简化脚本 (自动添加 v0 前缀, 使用 curl -Ls)
 
 set -e # 脚本出错时立即退出
 
 # 默认参数，如果命令行没有提供，则使用这些值
-NZ_AGENT_VERSION=${1:-"20.5"}       # Agent 版本，默认为 20.5
-NZ_GRPC_HOST=${2:-"nz.luck.nyc.mn"}    # 面板域名，默认为 nz.luck.nyc.mn
-NZ_GRPC_PORT=${3:-"443"}               # 面板 RPC 端口，默认为 443
-NZ_CLIENT_SECRET=${4:-"xGprpNknTducLdzZrh"} # Agent 密钥，默认为 xGprpNknTducLdzZrh
-NZ_TLS=${5:-""}                      # 是否启用 TLS，默认为空
+AGENT_VERSION=${1:-"20.5"}       # Agent 版本，默认为 20.5
+GRPC_HOST=${2:-"nz.luck.nyc.mn"}    # 面板域名，默认为 nz.luck.nyc.mn
+GRPC_PORT=${3:-"443"}               # 面板 RPC 端口，默认为 443
+CLIENT_SECRET=${4:-"xGprpNknTducLdzZrh"} # Agent 密钥，默认为 xGprpNknTducLdzZrh
+TLS=${5:-""}                      # 是否启用 TLS，默认为空
 
 # 添加 "v0." 前缀到版本号
 add_version_prefix() {
@@ -25,9 +25,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 PLAIN='\033[0m'
 
-# 定义 Agent 安装路径
-NZ_BASE_PATH="/opt/nezha"
-NZ_AGENT_PATH="${NZ_BASE_PATH}/agent"
+# 定义 Agent 安装路径 (现在在 root 目录)
+BASE_PATH="/root"
+AGENT_PATH="${BASE_PATH}/agent"
 
 # 检查是否需要 sudo
 need_sudo() {
@@ -86,12 +86,12 @@ get_arch() {
 # 下载 Agent
 download_agent() {
   ARCH=$(get_arch)
-  AGENT_VERSION=$(add_version_prefix "$NZ_AGENT_VERSION")
+  AGENT_VERSION=$(add_version_prefix "$AGENT_VERSION")
   AGENT_URL="https://github.com/nezhahq/agent/releases/download/${AGENT_VERSION}/nezha-agent_linux_${ARCH}.zip"
-  AGENT_ZIP="nezha-agent_linux_${ARCH}.zip"
+  AGENT_ZIP="agent_linux_${ARCH}.zip" # 去掉 nezhahq 前缀
 
   info "下载 Agent..."
-  ${need_sudo} wget -q "$AGENT_URL" -O "$AGENT_ZIP" || error "下载失败，请检查网络或版本号。"
+  ${need_sudo} curl -Ls "$AGENT_URL" -O "$AGENT_ZIP" || error "下载失败，请检查网络或版本号。"
 
   return "$AGENT_URL"
   return "$AGENT_ZIP"
@@ -103,23 +103,23 @@ install_agent() {
   AGENT_ZIP=$(basename "$AGENT_URL")
 
   info "安装 Agent..."
-  ${need_sudo} mkdir -p "$NZ_AGENT_PATH"
-  ${need_sudo} unzip -q "$AGENT_ZIP" -d "$NZ_AGENT_PATH" || error "解压失败。"
+  ${need_sudo} mkdir -p "$AGENT_PATH"
+  ${need_sudo} unzip -q "$AGENT_ZIP" -d "$AGENT_PATH" || error "解压失败。"
   ${need_sudo} rm -f "$AGENT_ZIP"
-  ${need_sudo} mv "$NZ_AGENT_PATH"/nezha-agent "$NZ_AGENT_PATH/nezha-agent" # 确保可执行
-  ${need_sudo} chmod +x "$NZ_AGENT_PATH/nezha-agent"
+  ${need_sudo} mv "$AGENT_PATH"/nezha-agent "$AGENT_PATH/agent" # 确保可执行，并去掉 nezhahq 前缀
+  ${need_sudo} chmod +x "$AGENT_PATH/agent"
 }
 
 # 配置 Agent
 configure_agent() {
   info "配置 Agent..."
-  if [ -n "$NZ_TLS" ]; then
+  if [ -n "$TLS" ]; then
     TLS_ARG="--tls"
   fi
 
-  ${need_sudo} "$NZ_AGENT_PATH/nezha-agent" service install \
-    -s "$NZ_GRPC_HOST:$NZ_GRPC_PORT" \
-    -p "$NZ_CLIENT_SECRET" \
+  ${need_sudo} "$AGENT_PATH/agent" service install \
+    -s "$GRPC_HOST:$GRPC_PORT" \
+    -p "$CLIENT_SECRET" \
     ${TLS_ARG} || error "Agent 配置失败。"
 }
 
@@ -129,14 +129,14 @@ main() {
   if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
     info "使用默认参数安装，或参数不足"
   else
-    info "开始安装，IP: $NZ_GRPC_HOST， RPC端口: $NZ_GRPC_PORT， 密钥: $NZ_CLIENT_SECRET ，版本: ${NZ_AGENT_VERSION} (自动转换为 v0.${NZ_AGENT_VERSION})，加密: $NZ_TLS"
+    info "开始安装，IP: $GRPC_HOST， RPC端口: $GRPC_PORT， 密钥: $CLIENT_SECRET ，版本: ${AGENT_VERSION} (自动转换为 v0.${AGENT_VERSION})，加密: $TLS"
   fi
 
   install_dependencies
   install_agent
   configure_agent
 
-  success "Nezha Agent 安装完成！"
+  success "Agent 安装完成！"
 }
 
 # 运行主流程
