@@ -365,7 +365,7 @@ install_agent() {
     #     echo "当前最新版本为： ${_version}"
     # fi
 
-    _version="v0.20.5"
+    _version="v0.17.5"
 
     # Nezha Monitoring Folder
     sudo mkdir -p $NZ_AGENT_PATH
@@ -598,7 +598,7 @@ restart_and_update_standalone() {
     #     _version=$(curl -m 10 -sL "https://gitee.com/api/v5/repos/naibahq/nezha/releases/latest" | awk -F '"' '{for(i=1;i<=NF;i++){if($i=="tag_name"){print $(i+2)}}}')
     # fi
 
-    _version="v0.20.13"
+    _version="v0.17.5"
 
     if [ -z "$_version" ]; then
         err "获取 Dashboard 版本号失败，请检查本机能否链接 https://api.github.com/repos/naiba/nezha/releases/latest"
