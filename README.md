@@ -26,6 +26,7 @@ chmod +x ~/direct-xray/start.sh && bash ~/direct-xray/start.sh
 ```
 bash ~/direct-xray/start.sh >/dev/null 2>&1
 ```
+## TV源
 ```
 https://gist.githubusercontent.com/senshinya/5a5cb900dfa888fd61d767530f00fc48/raw/gistfile1.txt
 ```
